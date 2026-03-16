@@ -7,54 +7,96 @@ namespace TaskHub
     {
         static void Main(string[] args)
         {
-            // 1. Inițializăm managerii
             TaskManager taskManager = new TaskManager();
-            ThemeSettings themeManager = new ThemeSettings();
+            bool running = true;
 
-            Console.WriteLine("--- Testare TaskHub ---");
-
-            // 2. Testăm Managerul de Teme
-            themeManager.ApplyTheme(VisualTheme.Dark);
-
-            // 3. Adăugăm câteva task-uri de probă
-            taskManager.AddTask(new TodoTask
+            while (running)
             {
-                Title = "Proiect UI",
-                Priority = TaskPriority.Urgent,
-                DueDate = DateTime.Now.AddDays(1)
-            });
+                Console.Clear();
+                Console.WriteLine("=== TaskHub Dashboard ===");
+                Console.WriteLine("1. Adaugă un task nou");
+                Console.WriteLine("2. Arată toate task-urile");
+                Console.WriteLine("3. Caută un task");
+                Console.WriteLine("4. Iesire");
+                Console.Write("\nAlege o opțiune: ");
 
-            taskManager.AddTask(new TodoTask
+                string optiune = Console.ReadLine();
+
+                switch (optiune)
+                {
+                    case "1":
+                        AdaugaTask(taskManager);
+                        break;
+                    case "2":
+                        AfiseazaToateTaskurile(taskManager);
+                        break;
+                    case "3":
+                        CautaTask(taskManager);
+                        break;
+                    case "4":
+                        running = false;
+                        break;
+                    default:
+                        Console.WriteLine("Opțiune invalidă! Apasă orice tastă...");
+                        Console.ReadKey();
+                        break;
+                }
+            }
+        }
+
+        // Metodă pentru adăugarea unui task
+        static void AdaugaTask(TaskManager tm)
+        {
+            Console.Clear();
+            Console.Write("Titlu task: ");
+            string titlu = Console.ReadLine();
+
+            Console.Write("Prioritate (0-Low, 1-Med, 2-High, 3-Urgent): ");
+            if (int.TryParse(Console.ReadLine(), out int p))
             {
-                Title = "Cumpărături",
-                Priority = TaskPriority.Low,
-                DueDate = DateTime.Now.AddDays(3)
-            });
-
-            taskManager.AddTask(new TodoTask
+                tm.AddTask(new TodoTask { Title = titlu, Priority = (TaskPriority)p });
+                Console.WriteLine("Task adăugat! Apasă orice tastă...");
+            }
+            else
             {
-                Title = "Curs C#",
-                Priority = TaskPriority.High,
-                IsCompleted = true, // Marcăm unul ca terminat pentru progres
-                DueDate = DateTime.Now
-            });
+                Console.WriteLine("Prioritate invalidă.");
+            }
+            Console.ReadKey();
+        }
 
-            // 4. Afișăm task-urile sortate după urgență
-            Console.WriteLine("\nListă Task-uri (Sortate):");
-            var sortedTasks = taskManager.GetSortedTasks();
+        // Metodă pentru afișarea tuturor task-urilor
+        static void AfiseazaToateTaskurile(TaskManager tm)
+        {
+            Console.Clear();
+            Console.WriteLine("--- Toate Task-urile ---");
+            var taskuri = tm.GetSortedTasks();
 
-            foreach (var task in sortedTasks)
+            if (taskuri.Count == 0) Console.WriteLine("Lista este goală.");
+
+            foreach (var t in taskuri)
             {
-                string status = task.IsCompleted ? "[V]" : "[ ]";
-                Console.WriteLine($"{status} {task.Priority} | {task.Title} (Deadline: {task.DueDate.ToShortDateString()})");
-                Console.WriteLine($"   ID unic: {task.Id}");
+                Console.WriteLine($"[{t.Priority}] {t.Title}");
             }
 
-            // 5. Afișăm progresul zilei
-            double progress = taskManager.GetDailyProgress();
-            Console.WriteLine($"\n--- Progres Zilnic: {progress}% ---");
+            Console.WriteLine("\nApasă orice tastă pentru a reveni la meniu...");
+            Console.ReadKey();
+        }
 
-            Console.WriteLine("\nApăsați orice tastă pentru a închide...");
+        // Metodă pentru căutare
+        static void CautaTask(TaskManager tm)
+        {
+            Console.Clear();
+            Console.Write("Introdu cuvântul de căutare: ");
+            string keyword = Console.ReadLine();
+            var rezultate = tm.SearchTasks(keyword);
+
+            Console.WriteLine($"\nRezultate pentru '{keyword}':");
+            foreach (var t in rezultate)
+            {
+                Console.WriteLine($"- {t.Title} ({t.Priority})");
+            }
+
+            Console.WriteLine("\nApasă orice tastă...");
             Console.ReadKey();
         }
     }

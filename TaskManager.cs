@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 public class TaskManager
 {
@@ -25,5 +26,12 @@ public class TaskManager
 
 		int completed = todayTasks.Count(t => t.IsCompleted);
 		return (double)completed / todayTasks.Count * 100;
+	}
+	// Căutare după un cuvânt cheie în titlu
+	public List<TodoTask> SearchTasks(string keyword)
+	{
+		return _tasks
+			.Where(t => t.Title.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+			.ToList();
 	}
 }
