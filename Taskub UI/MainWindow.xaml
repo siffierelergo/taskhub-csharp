@@ -1,0 +1,25 @@
+﻿<Window x:Class="TaskHub.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="TaskHub Manager" Height="450" Width="800">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,10">
+            <Button x:Name="btnIncarca" Content="Încarcă Task-uri" Width="120" Height="30" Click="btnIncarca_Click"/>
+        </StackPanel>
+
+        <DataGrid x:Name="dgTaskuri" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Titlu" Binding="{Binding Title}" Width="*"/>
+                <DataGridTextColumn Header="Prioritate" Binding="{Binding Priority}" Width="100"/>
+                <DataGridTextColumn Header="Categorie" Binding="{Binding Category}" Width="100"/>
+                <DataGridTextColumn Header="Deadline" Binding="{Binding DueDate, StringFormat=\{0:dd.MM.yyyy\}}" Width="120"/>
+                <DataGridCheckBoxColumn Header="Finalizat" Binding="{Binding IsCompleted}" Width="80"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>

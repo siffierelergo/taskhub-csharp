@@ -8,7 +8,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        IStocareData stocare = new AdministrareTaskuriFisierText("taskuri.txt");
+        IStocareData stocare = new AdministrareTaskuriFisierText(@"D:\Taskhub\taskhub2\TaskHub.App\bin\Debug\net8.0\taskuri.txt");
         bool running = true;
 
         while (running)
