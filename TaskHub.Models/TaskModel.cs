@@ -1,43 +1,43 @@
-﻿namespace TaskHub.Models;
+﻿using System;
 
-public enum TaskPriority { Low, Medium, High, Urgent }
-public enum TaskCategory { Personal, Work, Scoala, Diverse }
-
-[Flags]
-public enum TaskSettings { None = 0, RemindMe = 1, HighPriority = 2, Recurring = 4 }
-
-public class TodoTask
+namespace TaskHub.Models
 {
-    private const char SEPARATOR = ';';
+    public enum TaskCategory { Personal, Work, Scoala }
+    public enum TaskPriority { Low, Medium, High }
 
-    public Guid Id { get; set; } = Guid.NewGuid();
-    public string Title { get; set; }
-    public TaskPriority Priority { get; set; }
-    public TaskCategory Category { get; set; }
-    public TaskSettings Settings { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
-    public DateTime DueDate { get; set; }
-    public bool IsCompleted { get; set; }
-    public int DaysRemaining => (DueDate.Date - DateTime.Now.Date).Days;
-
-    public TodoTask() { }
-
-    public TodoTask(string linieFisier)
+    public class TodoTask
     {
-        var date = linieFisier.Split(SEPARATOR);
-        Id = Guid.Parse(date[0]);
-        Title = date[1];
-        Priority = (TaskPriority)Enum.Parse(typeof(TaskPriority), date[2]);
-        Category = (TaskCategory)Enum.Parse(typeof(TaskCategory), date[3]);
-        Settings = (TaskSettings)Enum.Parse(typeof(TaskSettings), date[4]);
-        CreatedAt = DateTime.Parse(date[5]);
-        DueDate = DateTime.Parse(date[6]);
-        IsCompleted = bool.Parse(date[7]);
-    }
+        public string Title { get; set; }
+        public TaskCategory Category { get; set; }
+        public DateTime DueDate { get; set; }
+        public TaskPriority Priority { get; set; }
+        public bool IsUrgent { get; set; }
 
-    public string ConversieLaSirPentruFisier()
-    {
-        return string.Join(SEPARATOR.ToString(),
-            Id, Title, Priority, Category, Settings, CreatedAt, DueDate, IsCompleted);
+        // PROPRIETĂȚILE LIPSA:
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public bool IsCompleted { get; set; } = false;
+
+        public TodoTask() { }
+
+        public TodoTask(string linieFisier)
+        {
+            var date = linieFisier.Split(';');
+            if (date.Length >= 7) // Am crescut la 7 câmpuri
+            {
+                Title = date[0];
+                Category = (TaskCategory)Enum.Parse(typeof(TaskCategory), date[1]);
+                DueDate = DateTime.Parse(date[2]);
+                Priority = (TaskPriority)Enum.Parse(typeof(TaskPriority), date[3]);
+                IsUrgent = bool.Parse(date[4]);
+                CreatedAt = DateTime.Parse(date[5]); // Citim data creării
+                IsCompleted = bool.Parse(date[6]);   // Citim starea finalizării
+            }
+        }
+
+        public string ConversieLaSirPentruFisier()
+        {
+            // Salvăm toate cele 7 câmpuri
+            return $"{Title};{Category};{DueDate};{Priority};{IsUrgent};{CreatedAt};{IsCompleted}";
+        }
     }
 }

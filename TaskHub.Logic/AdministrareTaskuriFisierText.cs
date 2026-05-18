@@ -1,48 +1,61 @@
-﻿using System.IO;
+﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System;
 using TaskHub.Models;
 
-namespace TaskHub.Logic;
-
-public class AdministrareTaskuriFisierText : IStocareData
+namespace TaskHub.Logic
 {
-    private string numeFisier;
-
-    public AdministrareTaskuriFisierText(string numeFisier)
+    public class AdministrareTaskuriFisierText : IStocareData
     {
-        this.numeFisier = numeFisier;
-        File.Open(numeFisier, FileMode.OpenOrCreate).Close();
-    }
+        private string numeFisier;
 
-    public void AddTask(TodoTask task)
-    {
-        using (StreamWriter sw = new StreamWriter(numeFisier, true))
+        public AdministrareTaskuriFisierText(string numeFisier)
         {
-            sw.WriteLine(task.ConversieLaSirPentruFisier());
+            this.numeFisier = numeFisier;
+            using (Stream s = File.Open(numeFisier, FileMode.OpenOrCreate)) { }
         }
-    }
 
-    public List<TodoTask> GetTasks()
-    {
-        List<TodoTask> taskuri = new List<TodoTask>();
-        using (StreamReader sr = new StreamReader(numeFisier))
+        public void AddTask(TodoTask task)
         {
-            string linie;
-            while ((linie = sr.ReadLine()) != null)
+            using (StreamWriter sw = new StreamWriter(numeFisier, true))
             {
-                taskuri.Add(new TodoTask(linie));
+                sw.WriteLine(task.ConversieLaSirPentruFisier());
             }
         }
-        return taskuri;
-    }
 
-    public List<TodoTask> SearchTasks(string keyword)
-    {
-        var toate = GetTasks();
-        return toate
-            .Where(t => t.Title != null && t.Title.Contains(keyword, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        public List<TodoTask> GetTasks()
+        {
+            List<TodoTask> taskuri = new List<TodoTask>();
+            if (!File.Exists(numeFisier)) return taskuri;
+
+            using (StreamReader sr = new StreamReader(numeFisier))
+            {
+                string linie;
+                while ((linie = sr.ReadLine()) != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(linie))
+                        taskuri.Add(new TodoTask(linie));
+                }
+            }
+            return taskuri;
+        }
+
+        public List<TodoTask> SearchTasks(string keyword)
+        {
+            return GetTasks().Where(t => t.Title.ToLower().Contains(keyword.ToLower())).ToList();
+        }
+
+        public void DeleteTask(TodoTask taskDeSters)
+        {
+            var toate = GetTasks();
+            toate.RemoveAll(t => t.Title == taskDeSters.Title && t.DueDate.Date == taskDeSters.DueDate.Date);
+
+            using (StreamWriter sw = new StreamWriter(numeFisier, false))
+            {
+                foreach (var t in toate)
+                    sw.WriteLine(t.ConversieLaSirPentruFisier());
+            }
+        }
     }
 }

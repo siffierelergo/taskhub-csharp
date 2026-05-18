@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -10,9 +9,7 @@ namespace TaskHub.UI
 {
     public partial class MainWindow : Window
     {
-        private const int MIN_LUNGIME_TITLU = 3;
-        private const int MAX_LUNGIME_TITLU = 15;
-        private IStocareData stocare = new AdministrareTaskuriFisierText("taskuri.txt");
+        IStocareData stocare = new AdministrareTaskuriFisierText("taskuri.txt");
 
         public MainWindow()
         {
@@ -26,81 +23,56 @@ namespace TaskHub.UI
             dgTaskuri.ItemsSource = stocare.GetTasks();
         }
 
-        private void btnIncarca_Click(object sender, RoutedEventArgs e) => IncarcaDatele();
-
-        private void btnCauta_Click(object sender, RoutedEventArgs e)
-        {
-            dgTaskuri.ItemsSource = stocare.SearchTasks(txtCautare.Text);
-        }
-
         private void btnAdauga_Click(object sender, RoutedEventArgs e)
         {
-            ResetareVizualaValidare();
-            if (ValideazaDate())
+            if (Valideaza())
             {
                 string catStr = (cmbCategorie.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Personal";
-                TaskCategory catEnum = (TaskCategory)Enum.Parse(typeof(TaskCategory), catStr);
-
-                var nouTask = new TodoTask
+                var t = new TodoTask
                 {
                     Title = txtTitlu.Text,
-                    Category = catEnum,
+                    Category = (TaskCategory)Enum.Parse(typeof(TaskCategory), catStr),
                     DueDate = DateTime.Now.AddDays(double.Parse(txtZile.Text)),
                     Priority = TaskPriority.Medium,
-                    IsCompleted = false
+                    IsUrgent = rbUrgentDa.IsChecked == true
                 };
-
-                stocare.AddTask(nouTask);
+                stocare.AddTask(t);
                 IncarcaDatele();
-                MessageBox.Show("Task salvat!");
                 btnReset_Click(null, null);
             }
         }
 
-        private bool ValideazaDate()
+        private bool Valideaza()
         {
-            bool esteValid = true;
-            SolidColorBrush culoareEroare = Brushes.Tomato;
+            lblTitlu.Foreground = Brushes.White;
+            errTitlu.Visibility = Visibility.Collapsed;
 
-            if (string.IsNullOrWhiteSpace(txtTitlu.Text) || txtTitlu.Text.Length < MIN_LUNGIME_TITLU || txtTitlu.Text.Length > MAX_LUNGIME_TITLU)
+            if (txtTitlu.Text.Length < 3 || txtTitlu.Text.Length > 15)
             {
-                lblTitlu.Foreground = culoareEroare;
+                lblTitlu.Foreground = Brushes.Tomato;
                 errTitlu.Visibility = Visibility.Visible;
-                esteValid = false;
+                return false;
             }
-
-            if (cmbCategorie.SelectedIndex == -1)
-            {
-                lblCategorie.Foreground = culoareEroare;
-                esteValid = false;
-            }
-
-            if (!double.TryParse(txtZile.Text, out double zile) || zile < 0)
-            {
-                lblZile.Foreground = culoareEroare;
-                errZile.Visibility = Visibility.Visible;
-                esteValid = false;
-            }
-
-            return esteValid;
+            if (!double.TryParse(txtZile.Text, out _) || cmbCategorie.SelectedIndex == -1) return false;
+            return true;
         }
 
-        private void ResetareVizualaValidare()
+        private void btnDone_Click(object sender, RoutedEventArgs e)
         {
-            SolidColorBrush culoareNormala = new SolidColorBrush(Color.FromRgb(224, 224, 224));
-            lblTitlu.Foreground = culoareNormala;
-            lblCategorie.Foreground = culoareNormala;
-            lblZile.Foreground = culoareNormala;
-            errTitlu.Visibility = Visibility.Collapsed;
-            errZile.Visibility = Visibility.Collapsed;
+            if (dgTaskuri.SelectedItem is TodoTask t)
+            {
+                stocare.DeleteTask(t);
+                IncarcaDatele();
+            }
         }
 
         private void btnReset_Click(object sender, RoutedEventArgs e)
         {
-            txtTitlu.Clear();
-            txtZile.Clear();
-            cmbCategorie.SelectedIndex = -1;
-            ResetareVizualaValidare();
+            txtTitlu.Clear(); txtZile.Clear(); cmbCategorie.SelectedIndex = -1; rbUrgentNu.IsChecked = true;
+            lblTitlu.Foreground = Brushes.White; errTitlu.Visibility = Visibility.Collapsed;
         }
+
+        private void btnIncarca_Click(object sender, RoutedEventArgs e) => IncarcaDatele();
+        private void btnCauta_Click(object sender, RoutedEventArgs e) => dgTaskuri.ItemsSource = stocare.SearchTasks(txtCautare.Text);
     }
 }
