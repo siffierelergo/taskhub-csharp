@@ -10,69 +10,98 @@ namespace TaskHub.UI
     public partial class MainWindow : Window
     {
         IStocareData stocare = new AdministrareTaskuriFisierText("taskuri.txt");
+        private TodoTask taskInEditare = null;
 
-        public MainWindow()
+        // DECLARARE DEPENDENCY PROPERTY PENTRU BINDING (Lab WPF avansat)
+        public static readonly DependencyProperty TextButonSalvareProperty =
+            DependencyProperty.Register("TextButonSalvare", typeof(string), typeof(MainWindow), new PropertyMetadata("Salvează"));
+
+        public string TextButonSalvare
         {
-            InitializeComponent();
-            IncarcaDatele();
+            get { return (string)GetValue(TextButonSalvareProperty); }
+            set { SetValue(TextButonSalvareProperty, value); }
         }
 
-        private void IncarcaDatele()
+        public MainWindow() { InitializeComponent(); IncarcaDatele(); }
+
+        private void IncarcaDatele() { dgTaskuri.ItemsSource = null; dgTaskuri.ItemsSource = stocare.GetTasks(); }
+
+        private bool Valideaza()
         {
-            dgTaskuri.ItemsSource = null;
-            dgTaskuri.ItemsSource = stocare.GetTasks();
+            bool ok = true;
+            lblTitlu.Foreground = Brushes.White;
+            lblCategorie.Foreground = Brushes.White;
+            lblZile.Foreground = Brushes.White;
+
+            if (string.IsNullOrWhiteSpace(txtTitlu.Text) || txtTitlu.Text.Length < 3 || txtTitlu.Text.Length > 15) { lblTitlu.Foreground = Brushes.Tomato; ok = false; }
+            if (cmbCategorie.SelectedIndex == -1) { lblCategorie.Foreground = Brushes.Tomato; ok = false; }
+            if (!double.TryParse(txtZile.Text, out double z) || z < 0) { lblZile.Foreground = Brushes.Tomato; ok = false; }
+
+            return ok;
         }
 
         private void btnAdauga_Click(object sender, RoutedEventArgs e)
         {
-            if (Valideaza())
+            if (!Valideaza()) return;
+
+            if (taskInEditare != null) stocare.DeleteTask(taskInEditare);
+
+            var t = new TodoTask
             {
-                string catStr = (cmbCategorie.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Personal";
-                var t = new TodoTask
-                {
-                    Title = txtTitlu.Text,
-                    Category = (TaskCategory)Enum.Parse(typeof(TaskCategory), catStr),
-                    DueDate = DateTime.Now.AddDays(double.Parse(txtZile.Text)),
-                    Priority = TaskPriority.Medium,
-                    IsUrgent = rbUrgentDa.IsChecked == true
-                };
-                stocare.AddTask(t);
-                IncarcaDatele();
-                btnReset_Click(null, null);
-            }
+                Title = txtTitlu.Text,
+                Category = (TaskCategory)cmbCategorie.SelectedIndex,
+                DueDate = DateTime.Now.AddDays(double.Parse(txtZile.Text)),
+                IsUrgent = rbUrgentDa.IsChecked == true,
+                CreatedAt = taskInEditare?.CreatedAt ?? DateTime.Now,
+                IsCompleted = false,
+                Priority = TaskPriority.Medium
+            };
+
+            stocare.AddTask(t);
+            IncarcaDatele();
+            btnReset_Click(null, null);
         }
 
-        private bool Valideaza()
+        private void btnCauta_Click(object sender, RoutedEventArgs e)
         {
-            lblTitlu.Foreground = Brushes.White;
-            errTitlu.Visibility = Visibility.Collapsed;
+            dgTaskuri.ItemsSource = stocare.SearchTasks(txtCautare.Text);
+        }
 
-            if (txtTitlu.Text.Length < 3 || txtTitlu.Text.Length > 15)
+        private void btnEdit_Click(object sender, RoutedEventArgs e)
+        {
+            if (dgTaskuri.SelectedItem is TodoTask t)
             {
-                lblTitlu.Foreground = Brushes.Tomato;
-                errTitlu.Visibility = Visibility.Visible;
-                return false;
+                taskInEditare = t;
+                txtTitlu.Text = t.Title;
+                cmbCategorie.SelectedIndex = (int)t.Category;
+                txtZile.Text = "0";
+                rbUrgentDa.IsChecked = t.IsUrgent;
+                rbUrgentNu.IsChecked = !t.IsUrgent;
+
+                // DATA BINDING ÎN ACȚIUNE: Modificăm proprietatea, iar interfața grafică reacționează singură
+                TextButonSalvare = "Actualizează";
+                lblTitlu.Foreground = Brushes.Yellow;
             }
-            if (!double.TryParse(txtZile.Text, out _) || cmbCategorie.SelectedIndex == -1) return false;
-            return true;
         }
 
         private void btnDone_Click(object sender, RoutedEventArgs e)
         {
-            if (dgTaskuri.SelectedItem is TodoTask t)
-            {
-                stocare.DeleteTask(t);
-                IncarcaDatele();
-            }
+            if (dgTaskuri.SelectedItem is TodoTask t) { stocare.DeleteTask(t); IncarcaDatele(); }
         }
 
         private void btnReset_Click(object sender, RoutedEventArgs e)
         {
-            txtTitlu.Clear(); txtZile.Clear(); cmbCategorie.SelectedIndex = -1; rbUrgentNu.IsChecked = true;
-            lblTitlu.Foreground = Brushes.White; errTitlu.Visibility = Visibility.Collapsed;
-        }
+            txtTitlu.Clear();
+            txtZile.Clear();
+            cmbCategorie.SelectedIndex = -1;
+            taskInEditare = null;
 
-        private void btnIncarca_Click(object sender, RoutedEventArgs e) => IncarcaDatele();
-        private void btnCauta_Click(object sender, RoutedEventArgs e) => dgTaskuri.ItemsSource = stocare.SearchTasks(txtCautare.Text);
+            // DATA BINDING ÎN ACȚIUNE: Revenim la textul inițial prin proprietate
+            TextButonSalvare = "Salvează";
+
+            lblTitlu.Foreground = Brushes.White;
+            lblCategorie.Foreground = Brushes.White;
+            lblZile.Foreground = Brushes.White;
+        }
     }
 }
